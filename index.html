@@ -1,0 +1,542 @@
+HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form 4 IT Revision Game</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #16a34a;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--background); color: var(--text); padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .game-container { width: 100%; max-width: 750px; background: var(--surface); padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        header { margin-bottom: 20px; text-align: center; }
+        h1 { font-size: 1.6rem; color: var(--primary); margin-bottom: 8px; }
+        .meta-info { display: flex; justify-content: space-between; color: var(--text-light); font-size: 0.9rem; margin-bottom: 10px; }
+        .progress-bar-container { width: 100%; height: 6px; background-color: var(--border); border-radius: 3px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background-color: var(--primary); transition: width 0.2s ease; }
+        .quiz-card { margin-bottom: 20px; }
+        .section-tag { display: inline-block; padding: 4px 10px; background-color: #dbeafe; color: var(--primary); border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-bottom: 12px; text-transform: uppercase; }
+        .question-text { font-size: 1.15rem; font-weight: 600; margin-bottom: 20px; }
+        .options-container { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .option-btn { background-color: var(--surface); border: 2px solid var(--border); padding: 14px 18px; border-radius: 6px; text-align: left; font-size: 0.95rem; cursor: pointer; transition: all 0.15s ease; }
+        .option-btn:hover:not(:disabled) { border-color: var(--primary); background-color: #eff6ff; }
+        .option-btn.correct { background-color: #dcfce7 !important; border-color: var(--success) !important; color: #14532d; font-weight: 600; }
+        .option-btn.wrong { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #7f1d1d; }
+        .feedback-box { margin-top: 15px; padding: 12px; border-radius: 6px; font-size: 0.95rem; display: none; }
+        .feedback-box.correct { display: block; background-color: #dcfce7; color: #14532d; }
+        .feedback-box.wrong { display: block; background-color: #fee2e2; color: #7f1d1d; }
+        .control-panel { display: flex; justify-content: flex-end; margin-top: 15px; }
+        .next-btn { background-color: var(--primary); color: white; border: none; padding: 10px 24px; border-radius: 6px; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: none; }
+        .next-btn:hover { background-color: var(--primary-hover); }
+        .results-screen { text-align: center; display: none; }
+        .score-display { font-size: 2.5rem; font-weight: 700; color: var(--primary); margin: 15px 0; }
+        .restart-btn { background-color: var(--primary); color: white; border: none; padding: 12px 28px; border-radius: 6px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="quiz-space">
+            <header>
+                <h1>IT Form 4 Revision Game</h1>
+                <div class="meta-info">
+                    <span id="question-counter">Question 1</span>
+                    <span id="score-counter">Score: 0</span>
+                </div>
+                <div class="progress-bar-container"><div id="progress-bar" class="progress-bar"></div></div>
+            </header>
+            <main class="quiz-card">
+                <span id="section-tag" class="section-tag">Loading...</span>
+                <div id="question-text" class="question-text">Game setting up...</div>
+                <div id="options-container" class="options-container"></div>
+                <div id="feedback-box" class="feedback-box"></div>
+            </main>
+            <footer class="control-panel">
+                <button id="next-btn" class="next-btn" onclick="nextQuestion()">Next Question &rarr;</button>
+            </footer>
+        </div>
+
+        <div id="results-screen" class="results-screen">
+            <h2>Review Complete!</h2>
+            <div id="score-display" class="score-display">0/0</div>
+            <p id="performance-msg"></p>
+            <button class="restart-btn" onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const questionBank = [
+            {
+                section: "Section 1: Peripherals and Printers",
+                question: "Which of the following contains TWO valid peripheral devices from the provided assessment list?",
+                options: ["Motherboard and Monitor", "Microphone and Monitor", "Compact disc and Motherboard", "None of the above"],
+                answer: 1,
+                reason: "Microphone, Monitor, Keyboard, and Mouse are valid peripherals. The motherboard is an internal component."
+            },
+            {
+                section: "Section 1: Peripherals and Printers",
+                question: "How is a Microphone specifically used within the music industry?",
+                options: ["To view the musical tracks layout", "To change the digital pitch manually", "To record vocals or live instruments into a computer", "To compress final file containers"],
+                answer: 2,
+                reason: "A microphone is utilized to record vocals or live instruments straight into a computer."
+            },
+            {
+                section: "Section 1: Peripherals and Printers",
+                question: "How is a Monitor specifically used within the music industry?",
+                options: ["To convert signals from digital to analog", "To view music editing software or lyrics during a session", "To input physical percussion timing elements", "To print structural sheet music layouts"],
+                answer: 1,
+                reason: "Monitors allow you to view music editing software or lyrics during a production session."
+            },
+            {
+                section: "Section 1: Peripherals and Printers",
+                question: "What are the two major structural categories of printers?",
+                options: ["Laser or Inkjet", "Impact or Non-impact", "Thermal or Matrix", "Static or Dynamic"],
+                answer: 1,
+                reason: "All printing technology fundamentally branches into either Impact or Non-impact variations."
+            },
+            {
+                section: "Section 1: Peripherals and Printers",
+                question: "What distinguishes a dot matrix printer from a thermal printer?",
+                options: ["Dot matrix strikes ribbons using mechanical pins; thermal printers apply heat to special paper", "Dot matrix uses toner powder lines; thermal uses microscopic ink droplets", "Dot matrix is a modern non-impact option; thermal is mechanical impact", "Dot matrix requires heat elements; thermal uses ribbons"],
+                answer: 0,
+                reason: "Dot matrix printers are impact units using pins to strike a ribbon, while thermal printers use heat on special paper."
+            },
+            {
+                section: "Section 1: Peripherals and Printers",
+                question: "Which option states three correct reasons to select a Laser printer over an Inkjet printer?",
+                options: ["Lower initial cost, compact form factor, vibrant photo printing", "Higher printing speed, lower cost per page (toner efficiency), sharper text/smudge-proof results", "Continuous ribbon mechanics, carbon copy options, pin reliability", "Heat activation, zero noise levels, specialized paper flexibility"],
+                answer: 1,
+                reason: "Laser printers feature higher printing speed (PPM), lower cost per page due to toner efficiency, and sharper, smudge-proof text quality."
+            },
+            {
+                section: "Section 2: Databases",
+                question: "In the table FARM, which field uniquely identifies each unique record?",
+                options: ["FarmerID", "ID No.", "FarmID", "Farm_Name"],
+                answer: 2,
+                reason: "FarmID acts as the field by which each record can be uniquely identified."
+            },
+            {
+                section: "Section 2: Databases",
+                question: "Which fields must be linked to establish a valid relational link between the FARMERS and FARM tables?",
+                options: ["FarmID and FarmerID", "ID No. (from FARMERS table) and FarmerID (from FARM table)", "ID No. (from FARM table) and FarmID (from FARMERS table)", "Farmer_Name and Location"],
+                answer: 1,
+                reason: "To build a relationship, link ID No. (from the FARMERS table) and FarmerID (from the FARM table)."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "Define the data control process of 'Verification'.",
+                options: ["The computer check to ensure logic checks match perfectly", "The process of checking that data has been copied accurately from one medium to another", "Applying dynamic rules to verify values stay positive", "Filtering structural parameters in coding scripts"],
+                answer: 1,
+                reason: "Verification checks that data has been copied accurately from one medium to another."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "Define the data control process of 'Validation'.",
+                options: ["An automatic computer check to ensure that the data entered is sensible and reasonable", "Double-typing standard alphanumeric parameters manually", "Manually proofreading paperwork against source data formats", "The translation framework of programming languages"],
+                answer: 0,
+                reason: "Validation is an automatic computer check to ensure that the data entered is sensible and reasonable."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "Typing the wrong character (e.g. hitting 'G' instead of 'F') is an example of what data entry error?",
+                options: ["Transposition error", "Transcription error", "Validation error", "Null pointer error"],
+                answer: 1,
+                reason: "Transcription errors involve direct entry mistakes, such as typing the wrong character."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "Swapping the positions of two character values (e.g. typing '12' instead of '21') represents what error type?",
+                options: ["Transcription error", "Syntax mistake", "Transposition error", "Structural fault"],
+                answer: 2,
+                reason: "Transposition errors occur when you accidentally swap two characters."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "Ensuring a student's test score remains strictly bound between 0 and 100 uses what check type?",
+                options: ["Presence check", "Data type check", "Length check", "Range check"],
+                answer: 3,
+                reason: "A range check ensures data stays within safe bounds, such as keeping scores between 0 and 100."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "Ensuring an intermediate 'Price' field accepts numerical values exclusively represents what validation check?",
+                options: ["Data type check", "Consistency check", "Presence check", "Format check"],
+                answer: 0,
+                reason: "A data type check ensures fields contain only correct characters (like numbers only in a Price field)."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "Ensuring a required field inside a form is not submitted empty utilizes what check?",
+                options: ["Range check", "Presence check", "Format check", "Length check"],
+                answer: 1,
+                reason: "A presence check guarantees required entry fields are not left blank."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "How does a double data entry validation scheme confirm a student's age?",
+                options: ["The computer cross-checks the age entry against their active birth certificate records", "The user is asked to type the age twice; the system compares both entries and only accepts them if they match", "The system requests a fingerprint check before unlocking entry input screens", "The data is converted automatically using custom age calculating scripts"],
+                answer: 1,
+                reason: "In double data entry, the user types data twice; the system compares both inputs and only accepts them if they match."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "Scenario 1: Cross-checking a user's calculated Age parameters against their structural Date of Birth (DOB) field. What validation type is this?",
+                options: ["Format Check", "Consistency Check", "Length Check", "Presence Check"],
+                answer: 1,
+                reason: "Comparing related values across two different fields to ensure they match up logically is a Consistency Check."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "Scenario 2: Forcing structural entries to fulfill a strict alphanumeric pattern like 'XXX-999999' uses what validation option?",
+                options: ["Length Check", "Data Type Check", "Format Check / Picture Check", "Consistency Check"],
+                answer: 2,
+                reason: "Forcing data to fit a strict explicit pattern layout is called a Format Check or Picture Check."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "Scenario 3: Restricting input fields to expect an exact, specific number of characters applies what validation?",
+                options: ["Length Check", "Range Check", "Type Verification", "Presence Check"],
+                answer: 0,
+                reason: "Checking that input matches a specific character count limitation is a Length Check."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "What actions can Jane execute inside word processing software to check the active word count of an essay?",
+                options: ["Check the status bar or navigate to the Review tab and click the Word Count tool", "Access the Layout configuration menus and search file attributes options", "Export documents to specialized text files to manually index text components", "Press the print layout shortcut to look for metadata logs"],
+                answer: 0,
+                reason: "Jane can check the lower software status bar or navigate to the Review tab to select the Word Count tool."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "What concept describes the specialized language used to design web documents for the World Wide Web?",
+                options: ["Web browser", "Hyperlink", "HTML", "Mail merge"],
+                answer: 2,
+                reason: "HTML is the markup language explicitly used to create documents intended for the WWW."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "What is a clickable structural element (word or image) that instantly opens a separate file?",
+                options: ["Mail merge", "Hyperlink", "Webpage", "Browser shortcut"],
+                answer: 1,
+                reason: "A hyperlink is a clickable word or image asset set up to launch files."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "What word processing tool acts as a template to efficiently construct multiple personalized documents?",
+                options: ["HTML forms", "Mail merge", "Web browser templates", "Format layouts"],
+                answer: 1,
+                reason: "Mail merge utilizes specific template assets to output batch customized personalized documents."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "What technical phrase defines the local application program used to view information on the World Wide Web?",
+                options: ["HTML client", "Web browser", "Webpage locator", "Hyperlink driver"],
+                answer: 1,
+                reason: "A web browser is the explicit user computer program utilized to view resources across the WWW."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "What is a single document hosted on the internet properly called?",
+                options: ["Web browser", "Hyperlink root", "Webpage", "Domain directory"],
+                answer: 2,
+                reason: "A single document hosted out on the web network lines is a webpage."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "In the context of the URL https://www.cxc.org/results, what part does 'https://' fulfill?",
+                options: ["The Path / File directory", "The Protocol", "The Domain Name", "The Host server identity"],
+                answer: 1,
+                reason: "The leading 'https://' denotes the data transfer Protocol."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "In the context of the URL https://www.cxc.org/results, what component does 'www.cxc.org' fulfill?",
+                options: ["The Protocol", "The Path", "The Domain Name / Host server", "The Application extension"],
+                answer: 2,
+                reason: "'www.cxc.org' acts as the designated Domain Name or host server location address."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "In the context of the URL https://www.cxc.org/results, what component does '/results' specify?",
+                options: ["The Domain protocol", "The Path / File directory", "The Host sub-server", "The Security handshake parameter"],
+                answer: 1,
+                reason: "The trailing forward slash segment '/results' defines the active Path or file directory folder."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "How do Hardware elements fundamentally differ from computer Software variants?",
+                options: ["Hardware dictates program architecture; software builds mechanical chipsets", "Hardware is the physical parts of the computer; software is the set of instructions that tell hardware what to do", "Hardware utilizes logic files; software rules physical board logic paths", "Hardware has digital code properties; software requires manual tools"],
+                answer: 1,
+                reason: "Hardware represents the physical parts of the computer (e.g., Keyboard), while software is the code instructions running it (e.g., Windows)."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "What is the likely cause when a payroll accounting document prints out with nothing but lines?",
+                options: ["The physical paper dimensions mismatch document values", "A corrupt printer driver or a hardware fault with the print head", "The source spreadsheet requires standard formula recalculations", "The security settings blocks local text transmissions"],
+                answer: 1,
+                reason: "Printing failure artifacts like plain line tracks usually point to a corrupt printer driver or a hardware fault inside the print head."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "State two distinct operational benefits that Graphical User Interfaces (GUI) hold over Command Line Interfaces (CLI).",
+                options: ["Faster processing speeds, zero operational memory needs", "It is more user-friendly/intuitive for beginners, and users do not need to memorize complex commands", "Lower screen resolution requirements, operates fully offline", "Bypasses standard OS structures, executes scripts seamlessly"],
+                answer: 1,
+                reason: "GUIs are user-friendly for beginners and drop requirements to memorize complex commands by implementing icons/menus."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "What is the definition of a programming 'syntax error'?",
+                options: ["An error causing incorrect math output while programs run smoothly", "An error in the rules or grammar of a programming language", "A physical error corrupting file storage sectors", "A network handshake drop causing memory execution stops"],
+                answer: 1,
+                reason: "Syntax errors mean writing code expressions that violate the structural rules or grammar formatting of that programming language."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "What is the correct variable data type pairing for variable: FirstName",
+                options: ["Integer", "String", "Boolean", "Float"],
+                answer: 1,
+                reason: "Text variables containing alphabetical letters utilize the String data type structure."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "What is the correct variable data type pairing for variable: ItemPrice",
+                options: ["Integer", "Boolean", "Float / Decimal", "String"],
+                answer: 2,
+                reason: "Numeric prices with fraction coordinates require Float or Decimal categorization variables."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "What is the correct variable data type pairing for variable: Receipt_Number",
+                options: ["Integer/String", "Boolean", "Float", "Decimal only"],
+                answer: 0,
+                reason: "Receipt sequences can use normal whole Integers, or Strings if formatting uses dashes or spaces."
+            },
+            {
+                section: "Section 3: Data Integrity and Software",
+                question: "What is the correct variable data type pairing for variable: Instock",
+                options: ["Float", "Integer", "String", "Boolean"],
+                answer: 3,
+                reason: "Tracking binary items that are either true or false uses the Boolean data type."
+            },
+            {
+                section: "Section 4: Application & Analysis",
+                question: "What is the technical name given to the analytical document application matrix layout shown in Section 4?",
+                options: ["Database form", "Word processor layout", "Spreadsheet", "Design framework"],
+                answer: 2,
+                reason: "A multi-cell data ledger grid tool is called a Spreadsheet."
+            },
+            {
+                section: "Section 4: Application & Analysis",
+                question: "What technical phrase describes a shaded area organized vertically (labeled 'A') within spreadsheets?",
+                options: ["Row", "Cell", "Column", "Range"],
+                answer: 2,
+                reason: "A shaded grid path moving vertically up and down across a sheet matrix layout is a Column."
+            },
+            {
+                section: "Section 4: Application & Analysis",
+                question: "What character sign must be entered first into a cell workspace when inputting any formula?",
+                options: ["Plus sign (+)", "The Equals sign (=)", "Asterisk (*)", "Hash symbol (#)"],
+                answer: 1,
+                reason: "Every functional calculation line must be initialized using the Equals sign (=)."
+            },
+            {
+                section: "Section 4: Application & Analysis",
+                question: "What is the proper syntax to calculate total drinks sold inside cell E2 (Quantity: C2, Price: D2)?",
+                options: ["C2 x D2", "=C2*D2", "SUM(C2:D2)", "=C2+D2"],
+                answer: 1,
+                reason: "The calculation translates to multiplying cell quantities via the syntax format: =C2*D2"
+            },
+            {
+                section: "Section 4: Application & Analysis",
+                question: "Which built-in spreadsheet function returns the largest numeric value in a specified range?",
+                options: ["=HIGHEST()", "=LARGE()", "=MAX()", "=SUM()"],
+                answer: 2,
+                reason: "To find the highest numeric cell index variable within an arbitrary range area, apply the =MAX() function."
+            },
+            {
+                section: "Section 4: Application & Analysis",
+                question: "Which spreadsheet tool is clicked when a user needs to reorganize data alphabetically or numerically?",
+                options: ["Format Painter", "Sort & Filter", "Conditional Formatting", "Merge & Center"],
+                answer: 1,
+                reason: "The Excel tool used for clean data organization sorting parameters is Sort & Filter."
+            },
+            {
+                section: "Section 4: Application & Analysis",
+                question: "To select a data range, where do you click and drag the mouse pointer?",
+                options: ["From the Bottom-Left cell straight to the Top-Right cell area", "From the Top-Left cell to the Bottom-Right cell of the data range", "Across the header boundaries exclusively", "From row cell endpoints to column markers directly"],
+                answer: 1,
+                reason: "To highlight cells properly, click and drag selection boxes from the Top-Left cell to the Bottom-Right cell coordinate."
+            },
+            {
+                section: "Section 5: Measures to Reduce Misuse of Information",
+                question: "What acts represent the formal definition of 'Information Misuse'?",
+                options: ["Failing to backup system data properties weekly", "Using data in a way that is unethical, illegal, or without permission", "Accidentally misplacing local hardware storage modules", "Forgetting user dashboard login security values"],
+                answer: 1,
+                reason: "Information Misuse is explicitly defined as using data in a way that is unethical, illegal, or without permission."
+            },
+            {
+                section: "Section 5: Measures to Reduce Misuse of Information",
+                question: "What is the non-consensual tracking and collection of personal details through spyware/phishing called?",
+                options: ["Unauthorized Collection", "Secondary Purpose Violation", "Inaccurate Data Maintenance", "Identity Fraud"],
+                answer: 0,
+                reason: "Gathering individual personal data profile criteria through covert tracking software tools without consent is Unauthorized Collection."
+            },
+            {
+                section: "Section 5: Measures to Reduce Misuse of Information",
+                question: "If a monitoring agency maintains an outdated, wrong credit rating for you, what misuse type is occurring?",
+                options: ["Secondary data utilization", "Maintaining inaccurate information", "Unauthorized extraction", "Identity theft mechanics"],
+                answer: 1,
+                reason: "Failing to keep accurate system logs falls under the misuse type of maintaining inaccurate information."
+            },
+            {
+                section: "Section 5: Measures to Reduce Misuse of Information",
+                question: "Gathering client data for one specific purpose but intentionally using it for other purposes violates what security parameter?",
+                options: ["Encryption security rules", "Secondary use of data or purpose limitation violation", "Cookie compliance standards", "Identity manipulation limits"],
+                answer: 1,
+                reason: "Using individual files outside original operational descriptions constitutes a secondary use of data violation."
+            },
+            {
+                section: "Section 5: Measures to Reduce Misuse of Information",
+                question: "What protection technology renders file traffic streams completely unreadable to intercept 'tapping' operations?",
+                options: ["Cookies", "Data validation checks", "Encryption", "Syntax definitions"],
+                answer: 2,
+                reason: "Encryption scramble mechanics hide information parameters securely from unauthorized wire tapping attempts."
+            },
+            {
+                section: "Section 5: Measures to Reduce Misuse of Information",
+                question: "What are small text files saved onto a user's computer by tracking websites called?",
+                options: ["Spyware executables", "Cookies", "Printer drivers", "HTML tags"],
+                answer: 1,
+                reason: "The small background script tracking metrics text elements stored locally are Cookies."
+            },
+            {
+                section: "Section 5: Measures to Reduce Misuse of Information",
+                question: "What crime is committed when someone deliberately exploits another person's unique identification details to commit fraud?",
+                options: ["Secondary collection methods", "Inaccurate data indexing", "Identity Theft", "Phishing execution"],
+                answer: 2,
+                reason: "Deliberately cloning and deploying someone else's personal data vectors to run scam frauds is Identity Theft."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let runningScore = 0;
+        let selectedOptionThisTurn = false;
+
+        function initGame() {
+            currentQuestionIndex = 0;
+            runningScore = 0;
+            document.getElementById("quiz-space").style.display = "block";
+            document.getElementById("results-screen").style.display = "none";
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            selectedOptionThisTurn = false;
+            document.getElementById("next-btn").style.display = "none";
+            document.getElementById("feedback-box").style.display = "none";
+            document.getElementById("feedback-box").className = "feedback-box";
+            
+            let activeQ = questionBank[currentQuestionIndex];
+            
+            document.getElementById("question-counter").innerText = `Question ${currentQuestionIndex + 1} of ${questionBank.length}`;
+            document.getElementById("score-counter").innerText = `Score: ${runningScore}`;
+            
+            let calculatedProgress = (currentQuestionIndex / questionBank.length) * 100;
+            document.getElementById("progress-bar").style.width = `${calculatedProgress}%`;
+            
+            document.getElementById("section-tag").innerText = activeQ.section;
+            document.getElementById("question-text").innerText = activeQ.question;
+            
+            let optionsContainer = document.getElementById("options-container");
+            optionsContainer.innerHTML = "";
+            
+            activeQ.options.forEach((optionString, index) => {
+                let btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.innerText = optionString;
+                btn.onclick = function() { evaluateChoice(this, index); };
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function evaluateChoice(selectedBtn, pickedIndex) {
+            if (selectedOptionThisTurn) return;
+            selectedOptionThisTurn = true;
+            
+            let activeQ = questionBank[currentQuestionIndex];
+            let allOptionButtons = document.getElementsByClassName("option-btn");
+            let feedbackElement = document.getElementById("feedback-box");
+            
+            for (let i = 0; i < allOptionButtons.length; i++) {
+                allOptionButtons[i].disabled = true;
+            }
+            
+            if (pickedIndex === activeQ.answer) {
+                selectedBtn.classList.add("correct");
+                feedbackElement.innerText = "Correct! " + activeQ.reason;
+                feedbackElement.className = "feedback-box correct";
+                runningScore++;
+                document.getElementById("score-counter").innerText = `Score: ${runningScore}`;
+            } else {
+                selectedBtn.classList.add("wrong");
+                allOptionButtons[activeQ.answer].classList.add("correct");
+                feedbackElement.innerText = "Incorrect. " + activeQ.reason;
+                feedbackElement.className = "feedback-box wrong";
+            }
+            
+            document.getElementById("next-btn").style.display = "block";
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questionBank.length) {
+                renderQuestion();
+            } else {
+                showResultsScreen();
+            }
+        }
+
+        function showResultsScreen() {
+            document.getElementById("quiz-space").style.display = "none";
+            document.getElementById("results-screen").style.display = "block";
+            document.getElementById("score-display").innerText = `${runningScore} / ${questionBank.length}`;
+            
+            let trackingPercentage = (runningScore / questionBank.length) * 100;
+            let performanceMessage = "";
+            
+            if (trackingPercentage === 100) {
+                performanceMessage = "Exceptional performance! Absolute mastery of every single assessment objective.";
+            } else if (trackingPercentage >= 80) {
+                performanceMessage = "Fantastic job! Great understanding of printers, data validation, and information security principles.";
+            } else if (trackingPercentage >= 50) {
+                performanceMessage = "Passable work! Consider reviewing database relationships and validation checks to score higher.";
+            } else {
+                performanceMessage = "Needs revision. Re-read the assessment guidelines and try again to build up your IT knowledge.";
+            }
+            
+            document.getElementById("performance-msg").innerText = performanceMessage;
+        }
+
+        function restartGame() {
+            initGame();
+        }
+
+        // Safer explicit load hook execution trigger
+        if (document.readyState === "complete" || document.readyState === "interactive") {
+            setTimeout(initGame, 1);
+        } else {
+            document.addEventListener("DOMContentLoaded", initGame);
+        }
+    </script>
+</body>
+</html>
